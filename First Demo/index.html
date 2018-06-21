@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>WebAssembly的简单Demo</title>
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black" />
+    <meta name="apple-touch-fullscreen" content="yes" />
+    <meta name="format-detection" content="telephone=no, email=no" />
+    <script src="loader.js"></script>
+</head>
+
+<body>
+    <h1>WebAssembly的简单Demo</h1>
+    <p>有两个输出，一个alert,一个console</p>
+
+    <script>
+        (async function load(params) {
+            const imports = {}
+            imports.env = imports.env || {}
+
+            const res = fetch('math.wasm')
+            const module = await WebAssembly.compileStreaming(res)
+
+            Object.assign(imports.env, {
+                tableBase: 0,
+                table: new WebAssembly.Table({
+                    initial: 4,
+                    element: 'anyfunc',
+                }),
+                memoryBase: 1024,
+                abort: () => { throw new Error('overflow'); },
+            });
+
+            const instance = await WebAssembly.instantiate(module, imports)
+            const result = instance.exports._square(42);
+            alert(result)
+        })()
+
+        loadWebAssembly('math.wasm')
+            .then(ins => console.log(ins.exports._square(42)))
+
+    </script>
+</body>
+
+</html>
